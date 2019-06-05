@@ -41,30 +41,33 @@ class DataSocket implements Runnable {
 			Session session = new Session();
 			Header wHeader = new Header();
 			
-			while((str = br.readLine())!=null) {
-				Header rHeader = gson.fromJson(str, Header.class);
-				if(rHeader.getCommand().equals("login")) {
-					
-					wHeader.setSessionKey(session.getSessionKey());
-					//add session to redis
+			str = br.readLine();
+			// parse to class
+			Header rHeader = gson.fromJson(str, Header.class);
+			if (rHeader.getCommand().equals("login")) {
+				wHeader.setCommand("newSession");
+				wHeader.setSessionKey(session.getSessionKey());
+				// add session to redis
+				jedis.setex(session.getSessionKey(), 11, session.getSessionKey());
+				// add expire 11
+			} else if (rHeader.getCommand().equals("normal")) {
+				wHeader.setCommand("ok");
+				// session key exists and collect
+				if (jedis.exists(rHeader.getSessionKey())) {
+					// set to expire reload
 					jedis.setex(session.getSessionKey(), 11, session.getSessionKey());
-					//add expire 11
-				} else if(rHeader.getCommand().equals("normal")) {
-					
-					if(jedis.exists(rHeader.getSessionKey())) {
-						//set to expire reload
-						jedis.setex(session.getSessionKey(), 11, session.getSessionKey());
-						System.out.println("collect session");
-					} else {
-						System.out.println("abnormal sessionKey");
-					}
+					System.out.println("collect session");
+					// session key exist and incollect
+				} else {
+					wHeader.setCommand("abnormal");
+					System.out.println("abnormal sessionKey");
 				}
-				System.out.println(rHeader.toString());
-				
-				bw.write(gson.toJson(wHeader)+"\n");
-				bw.flush();
-			}	
-			
+			}
+			System.out.println(rHeader.toString());
+
+			bw.write(gson.toJson(wHeader) + "\n");
+			bw.flush();
+
 			dsock.close();
 			
 		} catch (IOException e) {
@@ -102,7 +105,7 @@ public class ClusteredServer
 			while(true) {
 				Socket dsock = asock.accept();
 				System.out.println("accept");
-				
+
 				Runnable r = new DataSocket(dsock);
 				Thread t = new Thread(r);
 				t.start();
