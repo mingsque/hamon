@@ -16,11 +16,11 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-class dSocket implements Runnable {
+class DataSocket implements Runnable {
 
 	Socket dsock;
 	
-	public dSocket(Socket dsock) {
+	public DataSocket(Socket dsock) {
 		
 		this.dsock = dsock;
 	}
@@ -103,7 +103,7 @@ public class ClusteredServer
 				Socket dsock = asock.accept();
 				System.out.println("accept");
 				
-				Runnable r = new dSocket(dsock);
+				Runnable r = new DataSocket(dsock);
 				Thread t = new Thread(r);
 				t.start();
 			}

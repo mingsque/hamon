@@ -1,7 +1,5 @@
 package org.hamonsoft.pilot;
 
-import java.util.UUID;
-
 class Header {
 	private String	command;
 	private String	buffer;
