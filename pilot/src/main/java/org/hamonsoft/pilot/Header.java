@@ -4,9 +4,21 @@ class Header {
 	private String	command;
 	private String	buffer;
 	private String	sessionKey;
+	private String 	hostName;
 	
 	public Header() {
-		
+		this.command 	= "";
+		this.buffer 	= "";
+		this.sessionKey = "";
+		this.hostName 	= "";
+	}
+	
+	public String getHostName() {
+		return hostName;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
 	}
 
 	public String getCommand() {
@@ -35,7 +47,9 @@ class Header {
 
 	@Override
 	public String toString() {
-		return "Header [command=" + command + ", buffer=" + buffer + ", sessionKey=" + sessionKey + "]";
+		return "Header [command=" + command + ", buffer=" + buffer + ", sessionKey=" + sessionKey + ", hostName="
+				+ hostName + "]";
 	}
+	
 }
 
