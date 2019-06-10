@@ -7,55 +7,48 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
-import java.util.UUID;
-
 import com.google.gson.Gson;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 class DataSocket implements Runnable {
-	Jedis jedis;
+	SessionManager sessionManager;
 	Socket dsock;
-	
-	public DataSocket(Socket dsock, Jedis jedis) {
-		this.jedis = jedis;
+	public DataSocket(Socket dsock, SessionManager sessionManager) {
+		this.sessionManager = sessionManager;
 		this.dsock = dsock;
 	}
 	
 	public void run() {
-	
 		try {
-			//creat stream
+			//create stream
 			BufferedReader br = new BufferedReader(new InputStreamReader(dsock.getInputStream()));
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dsock.getOutputStream()));
 		
 			Gson gson = new Gson();
 			
 			String str;
-			//when thread creation = new
-			Session session = new Session();
 			Header wHeader = new Header();
 			
 			str = br.readLine();
-			// parse to class
+			//parse to class
 			Header rHeader = gson.fromJson(str, Header.class);
 			String command = rHeader.getCommand(); 
 			if (command.equals("login")) {
+				sessionManager.makeKey();
 				wHeader.setCommand("newSession");
-				wHeader.setSessionKey(session.getSessionKey());
+				wHeader.setSessionKey(sessionManager.getSessionKey());
 				// add session to redis
-				jedis.setex(session.getSessionKey(), 11, session.getSessionKey());
-				// add expire 11
+				sessionManager.addRedisSession(sessionManager.getSessionKey());
+				// add session to memory
+				sessionManager.addMemorySession();
 			} else if (command.equals("normal")) {
 				wHeader.setCommand("ok");
 				// session key exists and collect
-				if (jedis.exists(rHeader.getSessionKey())) {
+				if (sessionManager.existMemorySession(rHeader.getSessionKey())) {
 					// set to expire reload
 					wHeader.setCommand("normal");
-					jedis.setex(rHeader.getSessionKey(), 11, rHeader.getSessionKey());
+					sessionManager.addRedisSession(rHeader.getSessionKey());
+					//sessionManager.setRedisSession();
 					System.out.println("collect session");
 					// session key exist and incollect
 				} else {
@@ -84,8 +77,8 @@ public class ClusteredServer  {
 	
 	static int portAdd = 0;
 	 
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) {
+    	
         System.out.println( "Server start" );
         
         int portNumber = 10400;
@@ -99,20 +92,21 @@ public class ClusteredServer  {
         
         System.out.println(portNumber);
         
+        SessionManager sessionManager = new SessionManager();
+        sessionManager.init();
+        
 		try {
-			System.out.println("make socket");
-			//creat socket to accept 
-			ServerSocket asock = new ServerSocket(portNumber);
-			//creat socket to transfer 
+			System.out.println("make accept socket");
+			//create socket to accept 
+			ServerSocket asock = new ServerSocket(portNumber); 
 			
 			while(true) {
-				JedisPool pool	= new JedisPool(new JedisPoolConfig(), "192.168.252.129", 6379);
-				Jedis jedis		= pool.getResource();
-				
+				System.out.println("beforeAccept");
 				Socket dsock = asock.accept();
 				System.out.println("accept");
-
-				Runnable r = new DataSocket(dsock, jedis);
+				//create socket to transfer
+				Runnable r = new DataSocket(dsock, sessionManager);
+			
 				Thread t = new Thread(r);
 				t.start();
 			}
@@ -122,23 +116,6 @@ public class ClusteredServer  {
 
 			e.printStackTrace();
 		}
-
     }
 }
 
-class Session {
-	private String sessionKey;
-	private Date creationTime;
-	
-	public Session() {
-		//실행속도 이상함
-		this.sessionKey		= UUID.randomUUID().toString();
-		this.creationTime	= new Date();
-	}
-	public String getSessionKey() {
-		return sessionKey;
-	}
-	public void setSessionKey(String sessionKey) {
-		this.sessionKey = sessionKey;
-	}
-}
