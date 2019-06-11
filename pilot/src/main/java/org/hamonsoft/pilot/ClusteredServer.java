@@ -7,8 +7,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import com.google.gson.Gson;
+import java.util.UUID;
 
+import com.google.gson.Gson;
 
 class DataSocket implements Runnable {
 	SessionManager sessionManager;
@@ -32,22 +33,30 @@ class DataSocket implements Runnable {
 			str = br.readLine();
 			//parse to class
 			Header rHeader = gson.fromJson(str, Header.class);
-			String command = rHeader.getCommand(); 
+			String command = rHeader.getCommand();
+			String sessionKey = null;
+			
+			if(rHeader.getSessionKey()!=null) {
+				
+				sessionKey = rHeader.getSessionKey();
+			}
+			
 			if (command.equals("login")) {
-				sessionManager.makeKey();
+				String newSessionKey = UUID.randomUUID().toString(); 
+				// make session key
 				wHeader.setCommand("newSession");
-				wHeader.setSessionKey(sessionManager.getSessionKey());
+				wHeader.setSessionKey(newSessionKey);
 				// add session to redis
-				sessionManager.addRedisSession(sessionManager.getSessionKey());
+				sessionManager.addRedisSession(newSessionKey);
 				// add session to memory
-				sessionManager.addMemorySession();
+				sessionManager.addMemorySession(newSessionKey);
 			} else if (command.equals("normal")) {
 				wHeader.setCommand("ok");
 				// session key exists and collect
-				if (sessionManager.existMemorySession(rHeader.getSessionKey())) {
+				if (sessionManager.existMemorySession(sessionKey)) {
 					// set to expire reload
 					wHeader.setCommand("normal");
-					sessionManager.addRedisSession(rHeader.getSessionKey());
+					sessionManager.reloadRedisSession(sessionKey);
 					//sessionManager.setRedisSession();
 					System.out.println("collect session");
 					// session key exist and incollect
@@ -55,6 +64,10 @@ class DataSocket implements Runnable {
 					wHeader.setCommand("abnormal");
 					System.out.println("abnormal sessionKey");
 				}
+			} else if (command.equals("BYE")) {
+				
+				sessionManager.delMemorySession(sessionKey);
+				sessionManager.delRedisSession(sessionKey);
 			}
 			System.out.println(rHeader.toString());
 			
@@ -77,10 +90,8 @@ public class ClusteredServer  {
 	
 	static int portAdd = 0;
 	 
-    public static void main( String[] args ) {
-    	
-        System.out.println( "Server start" );
-        
+    public static void main( String[] args ) {  	
+  
         int portNumber = 10400;
         
         if(args.length == 0) {
@@ -90,20 +101,18 @@ public class ClusteredServer  {
         }
         portNumber = portNumber + portAdd;
         
-        System.out.println(portNumber);
-        
+        System.out.println("Server On Port ["+portNumber+"]");
         SessionManager sessionManager = new SessionManager();
-        sessionManager.init();
+        sessionManager.listenRedisSub();
         
 		try {
-			System.out.println("make accept socket");
+			System.out.println("MAKE ACCEPT SOCKET");
 			//create socket to accept 
 			ServerSocket asock = new ServerSocket(portNumber); 
 			
 			while(true) {
-				System.out.println("beforeAccept");
 				Socket dsock = asock.accept();
-				System.out.println("accept");
+				System.out.println("ACCEPT");
 				//create socket to transfer
 				Runnable r = new DataSocket(dsock, sessionManager);
 			

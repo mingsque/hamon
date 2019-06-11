@@ -1,20 +1,20 @@
 package org.hamonsoft.pilot;
 
 import java.util.HashSet;
-import java.util.UUID;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 
-class Subscriber extends JedisPubSub{
+class Subscriber extends JedisPubSub implements Runnable{
 	
-	HashSet<String> sessionSet;
+	JedisPool jedisPool;
+	SessionManager sessionManager;
 	
-	public Subscriber(HashSet<String> sessionSet){
-		
-		this.sessionSet = sessionSet;
+	public Subscriber(JedisPool jedisPool, SessionManager sessionManager ){
+		this.jedisPool = jedisPool;
+		this.sessionManager = sessionManager;
 	}
 
 	@Override
@@ -26,68 +26,51 @@ class Subscriber extends JedisPubSub{
 
 	@Override
 	public void onPMessage(String pattern, String channel, String message) {
-		System.out.println("pattern:"+pattern+" channel:"+channel+" message:"+message);
-		
+
 		String[] parse = channel.split(":");
-		//System.out.println(channel);
+		System.out.println("Event Key : "+parse[1]+" Message : " +message);
+		
 		if(message.equals("expired") || message.equals("del")) {
-			sessionSet.remove(parse[1]);
+			
+			sessionManager.delMemorySession(parse[1]);
 		} else if(message.equals("set")) {
-			sessionSet.add(parse[1]);
+			
+			sessionManager.addMemorySession(parse[1]);
 		} 
 		
-		System.out.println("SESSIONSET:" + sessionSet);
+		System.out.println("SESSIONSET:" + sessionManager.getSessionSet());
 	}
-}
 
-class ListenSub implements Runnable {
-	
-	JedisPool jedisPool;
-	Jedis jedis;
-	JedisPubSub subscriber;
-	
-	public ListenSub(JedisPool jedisPool, HashSet<String> sessionSet) {
-		this.jedisPool = jedisPool;
-		subscriber = new Subscriber(sessionSet);
-		jedis = jedisPool.getResource();
-		jedis.configSet("notify-keyspace-events", "KA");
-	}
-	
 	public void run() {
 		
-		jedis.psubscribe(subscriber, "__key*__:*");
+		Jedis jedis = jedisPool.getResource();
+		jedis.configSet("notify-keyspace-events", "KA");
+		jedis.psubscribe(this, "__key*__:*");
+		jedis.close();
 	}
-	
 }
 
 public class SessionManager {
 	
-	JedisPool jedisPool;
-	String sessionKey;
-	HashSet<String> sessionSet;
+	private JedisPool jedisPool;
+	private HashSet<String> sessionSet;
 	
-	public void makeKey() {
-		sessionKey = UUID.randomUUID().toString();
-	}
-	
-	public String getSessionKey() {
+	public SessionManager() {
 		
-		return sessionKey;
+		jedisPool	= new JedisPool(new JedisPoolConfig(), "192.168.116.129", 6379);
+		sessionSet = new HashSet<String>();
 	}
 	
-
-	void init() {
-		System.out.println("init");
-		//sessionList = new ArrayList<Session>();
-		jedisPool	= new JedisPool(new JedisPoolConfig(), "192.168.252.133", 6379);
-		sessionSet = new HashSet<String>();
-		Runnable r = new ListenSub(jedisPool, sessionSet);
+	public void listenRedisSub() {
+		
+		Runnable r = new Subscriber(jedisPool, this);
 		Thread t = new Thread(r);
 		t.start();
 	}
 	
+	//sessionkey pool confirm
 	boolean existMemorySession(String cliSessionKey) {
-		System.out.println("existMemSession");
+		
 		boolean result = false;
 		
 		if(sessionSet.contains(cliSessionKey)) {
@@ -97,18 +80,29 @@ public class SessionManager {
 	}
 	
 	//add memory key
-	void addMemorySession() {
-		System.out.println("addSession");
+	public synchronized void addMemorySession(String sessionKey) {
 
 		sessionSet.add(sessionKey);
 	}
 	
+	//delete memory key
+	public synchronized void delMemorySession(String sessionKey) {
+		
+		sessionSet.remove(sessionKey);
+	}
+	
 	//add redis key and expire reload
 	void addRedisSession(String sessionKey) {
-		System.out.println("setRedisSession");
-		Jedis jedis = jedisPool.getResource();
 		
+		Jedis jedis = jedisPool.getResource();
 		jedis.setex(sessionKey, 11, sessionKey);
+		jedis.close();
+	}
+	
+	void reloadRedisSession(String sessionKey) {
+		
+		Jedis jedis = jedisPool.getResource();
+		jedis.expire(sessionKey, 11);
 		jedis.close();
 	}
 	
@@ -119,10 +113,13 @@ public class SessionManager {
 		jedis.del(sessionKey);
 		jedis.close();
 	}
-	
-	//delete memory key
-	void delMemorySession(String sessionKey) {
-		
-		sessionSet.remove(sessionKey);
+
+	public HashSet<String> getSessionSet() {
+		return sessionSet;
 	}
+
+	public void setSessionSet(HashSet<String> sessionSet) {
+		this.sessionSet = sessionSet;
+	}
+	
 }
