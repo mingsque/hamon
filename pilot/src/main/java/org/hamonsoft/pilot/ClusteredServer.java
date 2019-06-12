@@ -7,84 +7,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.UUID;
-
-import com.google.gson.Gson;
-
-class DataSocket implements Runnable {
-	SessionManager sessionManager;
-	Socket dsock;
-	public DataSocket(Socket dsock, SessionManager sessionManager) {
-		this.sessionManager = sessionManager;
-		this.dsock = dsock;
-	}
-	
-	public void run() {
-		try {
-			//create stream
-			BufferedReader br = new BufferedReader(new InputStreamReader(dsock.getInputStream()));
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dsock.getOutputStream()));
-		
-			Gson gson = new Gson();
-			
-			String str;
-			Header wHeader = new Header();
-			
-			str = br.readLine();
-			//parse to class
-			Header rHeader = gson.fromJson(str, Header.class);
-			String command = rHeader.getCommand();
-			String sessionKey = null;
-			
-			if(rHeader.getSessionKey()!=null) {
-				
-				sessionKey = rHeader.getSessionKey();
-			}
-			
-			if (command.equals("login")) {
-				String newSessionKey = UUID.randomUUID().toString(); 
-				// make session key
-				wHeader.setCommand("newSession");
-				wHeader.setSessionKey(newSessionKey);
-				// add session to redis
-				sessionManager.addRedisSession(newSessionKey);
-				// add session to memory
-				sessionManager.addMemorySession(newSessionKey);
-			} else if (command.equals("normal")) {
-				wHeader.setCommand("ok");
-				// session key exists and collect
-				if (sessionManager.existMemorySession(sessionKey)) {
-					// set to expire reload
-					wHeader.setCommand("normal");
-					sessionManager.reloadRedisSession(sessionKey);
-					//sessionManager.setRedisSession();
-					System.out.println("collect session");
-					// session key exist and incollect
-				} else {
-					wHeader.setCommand("abnormal");
-					System.out.println("abnormal sessionKey");
-				}
-			} else if (command.equals("BYE")) {
-				
-				sessionManager.delMemorySession(sessionKey);
-				sessionManager.delRedisSession(sessionKey);
-			}
-			System.out.println(rHeader.toString());
-			
-			wHeader.setHostName(new Integer(ClusteredServer.portAdd).toString());
-			
-			bw.write(gson.toJson(wHeader) + "\n");
-			bw.flush();
-
-			dsock.close();
-			
-		} catch (IOException e) {
-			
-			e.printStackTrace();
-		} 
-		
-	}	
-}
 
 public class ClusteredServer  {
 	
@@ -102,27 +24,23 @@ public class ClusteredServer  {
         portNumber = portNumber + portAdd;
         
         System.out.println("Server On Port ["+portNumber+"]");
-        SessionManager sessionManager = new SessionManager();
-        sessionManager.listenRedisSub();
-        
+        //sessionManager.listenRedisSub();
+		System.out.println("MAKE ACCEPT SOCKET");        
 		try {
-			System.out.println("MAKE ACCEPT SOCKET");
-			//create socket to accept 
-			ServerSocket asock = new ServerSocket(portNumber); 
+			ServerSocket serverSocket = new ServerSocket(portNumber); 
 			
 			while(true) {
-				Socket dsock = asock.accept();
+				Socket dataSocket = serverSocket.accept();
+				
 				System.out.println("ACCEPT");
-				//create socket to transfer
-				Runnable r = new DataSocket(dsock, sessionManager);
-			
+				
+				Runnable r = new DataSocket(dataSocket);
 				Thread t = new Thread(r);
 				t.start();
 			}
 			
-			
 		} catch (IOException e) {
-
+			
 			e.printStackTrace();
 		}
     }

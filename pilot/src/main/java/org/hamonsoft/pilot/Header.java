@@ -1,6 +1,6 @@
 package org.hamonsoft.pilot;
 
-class Header {
+public class Header {
 	private String	command;
 	private String	buffer;
 	private String	sessionKey;

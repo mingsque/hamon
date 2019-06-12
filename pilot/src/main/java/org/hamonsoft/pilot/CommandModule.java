@@ -1,0 +1,28 @@
+package org.hamonsoft.pilot;
+
+public abstract class CommandModule {
+		
+	public RedisConnector redisConnector;
+	public SessionManager sessionManager;
+	public Header header;
+	public String session;
+	
+	public CommandModule() {
+		
+		redisConnector = new RedisConnector();
+		sessionManager = SessionManager.getInstance();
+		header = new Header();
+	}
+	
+	public void dbProcess() {};
+
+	public void memoryProccess() {};
+	
+	public Header getResult() {
+		
+		//dbProcess();
+		memoryProccess();
+		
+		return header;
+	}
+}
