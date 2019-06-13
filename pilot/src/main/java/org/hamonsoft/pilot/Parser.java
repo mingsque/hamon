@@ -18,8 +18,11 @@ class Parser {
 		
 		Header header = gson.fromJson(str, Header.class);
 		
+		System.out.println("RECIEVED DATA : "+ header);
+		
 		String command = header.getCommand();
 		String sessionKey = header.getSessionKey();
+		
 		
 		CommandModule commandModule = null;
 	
@@ -34,7 +37,7 @@ class Parser {
 			commandModule = new EndModule();
 		}
 		
-		System.out.println("SELECT MODULE : "+commandModule);
+		
 	
 		Header result = commandModule.getResult();
 		
