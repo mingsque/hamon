@@ -3,10 +3,10 @@ package org.hamonsoft.pilot;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.ScanResult;
 
 public class RedisConnector {
 	private JedisPool jedisPool;
-	
 	static private RedisConnector instance;
 	
 	//singleton pattern to safe thread about one space
@@ -33,6 +33,24 @@ public class RedisConnector {
 	public void disconnect() {
 		
 		jedisPool.destroy();
+	}
+	
+	public void getAll(SessionManager sessionManager) {
+		
+		Jedis jedis = jedisPool.getResource();
+		ScanResult<String> str;
+		String cursor = "0";
+		
+		do {
+			str = jedis.scan(cursor);
+			
+			for(String temp : str.getResult()) {
+				sessionManager.addSession(temp);
+			}
+			cursor = str.getCursor();	
+		
+		} while(!cursor.equals("0"));
+		
 	}
 	
 	public void set(String str) {
