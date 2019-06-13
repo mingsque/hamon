@@ -18,17 +18,16 @@ class Subscriber extends JedisPubSub implements Runnable{
 	public void onPMessage(String pattern, String channel, String message) {
 
 		String[] parse = channel.split(":");
-		System.out.println("Event Key : "+parse[1]+" Message : " +message);
 		
 		if(message.equals("expired") || message.equals("del")) {
-			
+			System.out.println("Event Key : "+parse[1]+" Message : " +message);
 			sessionManager.delSession(parse[1]);
 		} else if(message.equals("set")) {
 			
 			sessionManager.addSession(parse[1]);
 		} 
 		
-		System.out.println("SESSIONSET:" + sessionManager.getSessionSet());
+		//System.out.println("SESSIONSET:" + sessionManager.getSessionSet());
 	}
 
 	public void run() {
