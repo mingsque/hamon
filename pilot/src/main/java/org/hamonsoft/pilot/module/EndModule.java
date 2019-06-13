@@ -20,6 +20,6 @@ public class EndModule extends CommandModule {
 		dbProcess();
 		memoryProcess();
 		
-		return super.header;
+		return header;
 	}
 }

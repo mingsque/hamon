@@ -15,18 +15,14 @@ public class NormalModule extends CommandModule {
 			
 			redisConnector.expire(session);
 		} else {
-			
-			
+				
 		}
-		
 	}
 
 	public void memoryProcess(Boolean authResult) {
 		if(authResult) {
 			
-			
 		} else {
-			
 			
 		}
 	} 
@@ -39,7 +35,6 @@ public class NormalModule extends CommandModule {
 		} else {
 			result = false;
 		}
-		
 		return result;
 	}
 	
@@ -55,7 +50,6 @@ public class NormalModule extends CommandModule {
 			
 			header.setCommand("abnormal");
 		}
-		
 		return header;
 	}
 }

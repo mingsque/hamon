@@ -14,11 +14,6 @@ public abstract class CommandModule {
 		header = new Header();
 	}
 	
-	public void init() {
-		
-
-	}
-	
 	public void dbProcess() {};
 
 	public void memoryProccess() {};

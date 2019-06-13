@@ -7,10 +7,9 @@ import redis.clients.jedis.JedisPubSub;
 class Subscriber extends JedisPubSub implements Runnable{
 	
 	JedisPool jedisPool;
-	SessionManager sessionManager;
 	
 	public Subscriber(JedisPool jedisPool){
-		sessionManager = SessionManager.getInstance();
+
 		this.jedisPool = jedisPool;
 	}
 
@@ -21,10 +20,10 @@ class Subscriber extends JedisPubSub implements Runnable{
 		
 		if(message.equals("expired") || message.equals("del")) {
 			System.out.println("Event Key : "+parse[1]+" Message : " +message);
-			sessionManager.delSession(parse[1]);
+			SessionManager.getInstance().delSession(parse[1]);
 		} else if(message.equals("set")) {
 			
-			sessionManager.addSession(parse[1]);
+			SessionManager.getInstance().addSession(parse[1]);
 		} 
 		
 		//System.out.println("SESSIONSET:" + sessionManager.getSessionSet());
