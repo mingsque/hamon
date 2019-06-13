@@ -35,8 +35,8 @@ class Parser {
 		}
 		
 		System.out.println("SELECT MODULE : "+commandModule);
+	
 		Header result = commandModule.getResult();
-		
 		
 		return gson.toJson(result);
 	}

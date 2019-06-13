@@ -17,6 +17,7 @@ public class RedisConnector {
 			instance = new RedisConnector();
 			instance.connect();
 			instance.runSubscriber();
+			instance.getAll(SessionManager.getInstance());
 		}
 		return instance;
 	}
@@ -50,6 +51,8 @@ public class RedisConnector {
 			cursor = str.getCursor();	
 		
 		} while(!cursor.equals("0"));
+		
+		jedis.close();
 		
 	}
 	

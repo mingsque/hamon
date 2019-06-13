@@ -23,7 +23,6 @@ class DataSocket implements Runnable {
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dataSocket.getOutputStream()));
 		
 			String str = br.readLine();
-		
 			
 			String result = parser.getModuleResult(str);
 				

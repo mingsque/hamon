@@ -12,8 +12,11 @@ public abstract class CommandModule {
 		redisConnector = RedisConnector.getInstance();
 		sessionManager = SessionManager.getInstance();
 		header = new Header();
+	}
+	
+	public void init() {
 		
-		redisConnector.getAll(sessionManager);
+
 	}
 	
 	public void dbProcess() {};

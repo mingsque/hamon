@@ -3,7 +3,7 @@
   associations="true" dependencies="false" nesting-relationships="true" router="FAN">  
   <class id="1" language="java" name="org.hamonsoft.pilot.CommandModule" project="pilot" 
     file="/pilot/src/main/java/org/hamonsoft/pilot/CommandModule.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="153" width="141" x="319" y="98"/>    
+    <position height="-1" width="-1" x="354" y="110"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
@@ -66,7 +66,7 @@
   </class>  
   <class id="8" language="java" name="org.hamonsoft.pilot.ClusteredServer" project="pilot" 
     file="/pilot/src/main/java/org/hamonsoft/pilot/ClusteredServer.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="117" width="117" x="142" y="98"/>    
+    <position height="-1" width="-1" x="198" y="148"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
@@ -75,7 +75,7 @@
   </class>  
   <class id="9" language="java" name="org.hamonsoft.pilot.module.LoginModule" project="pilot" 
     file="/pilot/src/main/java/org/hamonsoft/pilot/module/LoginModule.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="-1" width="-1" x="595" y="103"/>    
+    <position height="-1" width="-1" x="788" y="133"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
@@ -93,7 +93,7 @@
   </class>  
   <class id="11" language="java" name="org.hamonsoft.pilot.module.NormalModule" project="pilot" 
     file="/pilot/src/main/java/org/hamonsoft/pilot/module/NormalModule.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="-1" width="-1" x="789" y="88"/>    
+    <position height="-1" width="-1" x="687" y="236"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
