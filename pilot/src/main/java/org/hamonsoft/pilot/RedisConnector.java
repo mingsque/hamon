@@ -7,14 +7,27 @@ import redis.clients.jedis.JedisPoolConfig;
 public class RedisConnector {
 	private JedisPool jedisPool;
 	
+	static private RedisConnector instance;
+	
+	//singleton pattern to safe thread about one space
+	private RedisConnector() {}
+	
+	public static synchronized RedisConnector getInstance() {
+		if(instance == null) {
+			instance = new RedisConnector();
+			instance.connect();
+			instance.runSubscriber();
+		}
+		return instance;
+	}
+
 	public void connect() {
 		
 		try {
-			jedisPool	= new JedisPool(new JedisPoolConfig(), "192.168.116.129", 6379);
+			jedisPool	= new JedisPool(new JedisPoolConfig(), "192.168.116.131", 6379);
 		} catch(Exception e) {
 			
 		}
-		runSubscriber();
 	}
 
 	public void disconnect() {
@@ -52,8 +65,8 @@ public class RedisConnector {
 	
 	public void runSubscriber() {
 		
-		//Runnable r = new Subscriber(jedisPool);
-		//Thread t = new Thread(r);
-		//t.start();
+		Runnable r = new Subscriber(jedisPool);
+		Thread t = new Thread(r);
+		t.start();
 	}
 }

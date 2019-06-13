@@ -10,7 +10,7 @@ class Subscriber extends JedisPubSub implements Runnable{
 	SessionManager sessionManager;
 	
 	public Subscriber(JedisPool jedisPool){
-		
+		sessionManager = SessionManager.getInstance();
 		this.jedisPool = jedisPool;
 	}
 

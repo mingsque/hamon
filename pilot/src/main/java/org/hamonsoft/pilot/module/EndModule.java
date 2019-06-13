@@ -7,18 +7,17 @@ public class EndModule extends CommandModule {
 
 	public void dbProcess() {
 
-		
+		redisConnector.del(session);
 	}
 
 	public void memoryProcess() {
 
 		sessionManager.delSession(session);
 	}
-
 	
 	public Header getResult() {
 		
-		//dbProcess();
+		dbProcess();
 		memoryProcess();
 		
 		return super.header;

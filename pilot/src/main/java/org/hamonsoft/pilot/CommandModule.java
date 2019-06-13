@@ -9,7 +9,7 @@ public abstract class CommandModule {
 	
 	public CommandModule() {
 		
-		redisConnector = new RedisConnector();
+		redisConnector = RedisConnector.getInstance();
 		sessionManager = SessionManager.getInstance();
 		header = new Header();
 	}
@@ -20,8 +20,10 @@ public abstract class CommandModule {
 	
 	public Header getResult() {
 		
-		//dbProcess();
+		dbProcess();
 		memoryProccess();
+		
+		System.out.println("There is no Module");
 		
 		return header;
 	}

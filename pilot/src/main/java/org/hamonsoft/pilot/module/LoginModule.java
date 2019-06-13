@@ -13,21 +13,21 @@ public class LoginModule extends CommandModule {
 	
 	public void dbProcess() {
 		
-		redisConnector.connect();
 		redisConnector.set(session);
 	}
 
 	public void memoryProcess() {
 
 		sessionManager.addSession(session);
-		header.setCommand("newSession");
-		header.setSessionKey(session);
 	}
 	
 	public Header getResult() {
 		
-		//dbProcess();
+		dbProcess();
 		memoryProcess();
+		
+		header.setCommand("newSession");
+		header.setSessionKey(session);
 		
 		return header;
 	}

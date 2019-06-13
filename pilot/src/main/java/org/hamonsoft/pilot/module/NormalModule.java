@@ -10,30 +10,52 @@ public class NormalModule extends CommandModule {
 		this.session = session;
 	}
 	
-	public void dbProcess() {
+	public void dbProcess(Boolean authResult) {
+		if(authResult) {
+			
+			redisConnector.expire(session);
+		} else {
+			
+			
+		}
 		
-		redisConnector.connect();		
 	}
 
-	public void memoryProcess() {
+	public void memoryProcess(Boolean authResult) {
+		if(authResult) {
+			
+			
+		} else {
+			
+			
+		}
+	} 
+	
+	public boolean sessionAuth() {
+		boolean result = true;
 		
 		if(sessionManager.existSession(session)) {
-			
+			result = true;
+		} else {
+			result = false;
+		}
+		
+		return result;
+	}
+	
+	public Header getResult() {
+		Boolean sessionAuth = sessionAuth();
+		
+		dbProcess(sessionAuth);
+		memoryProcess(sessionAuth);
+		
+		if(sessionAuth) {
 			header.setCommand("normal");
-			//redisConnector.expire(session);
 		} else {
 			
 			header.setCommand("abnormal");
 		}
 		
-		System.out.println(sessionManager.getSessionSet());
-	}
-	
-	public Header getResult() {
-		
-		//dbProcess();
-		memoryProcess();
-		
-		return super.header;
+		return header;
 	}
 }

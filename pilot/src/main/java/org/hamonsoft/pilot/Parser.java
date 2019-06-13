@@ -22,7 +22,7 @@ class Parser {
 		String sessionKey = header.getSessionKey();
 		
 		CommandModule commandModule = null;
-		
+	
 		if(command.equals("login")) {
 			
 			commandModule = new LoginModule();
@@ -36,6 +36,7 @@ class Parser {
 		
 		System.out.println("SELECT MODULE : "+commandModule);
 		Header result = commandModule.getResult();
+		
 		
 		return gson.toJson(result);
 	}
