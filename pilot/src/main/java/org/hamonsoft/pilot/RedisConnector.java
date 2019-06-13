@@ -44,7 +44,7 @@ public class RedisConnector {
 		
 		do {
 			str = jedis.scan(cursor);
-			
+		
 			for(String temp : str.getResult()) {
 				sessionManager.addSession(temp);
 			}
@@ -53,7 +53,6 @@ public class RedisConnector {
 		} while(!cursor.equals("0"));
 		
 		jedis.close();
-		
 	}
 	
 	public void set(String str) {

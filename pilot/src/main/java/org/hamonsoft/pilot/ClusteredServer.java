@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+
 public class ClusteredServer {
 
 	static int portAdd = 0;
@@ -17,12 +18,15 @@ public class ClusteredServer {
 		} else {
 			portAdd = Integer.parseInt(args[0]);
 		}
+		
 		portNumber = portNumber + portAdd;
 
 		System.out.println("Server On Port [" + portNumber + "]");
 		System.out.println("MAKE ACCEPT SOCKET");
 
 		ServerSocket serverSocket = null;
+
+		RedisConnector.getInstance();
 
 		try {
 			
