@@ -9,15 +9,14 @@ import java.net.Socket;
 
 class DataSocket implements Runnable {
 	Socket dataSocket;
-	Parser parser;
 	
 	public DataSocket(Socket dataSocket) {
 		this.dataSocket = dataSocket;
-		this.parser = new Parser();
 	}
 	
 	public void run() {
 		
+		Parser parser = new Parser();
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(dataSocket.getInputStream()));
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dataSocket.getOutputStream()));

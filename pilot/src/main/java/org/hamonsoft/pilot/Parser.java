@@ -32,11 +32,10 @@ class Parser {
 		} else if(command.equals("bye")) {
 			
 			commandModule = new EndModule();
-		}
+		}	
 		
-		System.out.println("SELECT MODULE : "+commandModule);
-	
 		Header result = commandModule.getResult();
+		result.setHostName(ClusteredServer.name);
 		
 		return gson.toJson(result);
 	}

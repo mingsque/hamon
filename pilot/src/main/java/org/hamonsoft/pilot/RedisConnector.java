@@ -1,12 +1,19 @@
 package org.hamonsoft.pilot;
 
+import java.net.Socket;
+import java.util.HashSet;
+import java.util.Set;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public class RedisConnector {
 	private JedisPool jedisPool;
+	
 	static private RedisConnector instance;
 	
 	//singleton pattern to safe thread about one space
@@ -15,17 +22,41 @@ public class RedisConnector {
 	public static synchronized RedisConnector getInstance() {
 		if(instance == null) {
 			instance = new RedisConnector();
-			instance.connect();
-			instance.runSubscriber();
-			instance.getAll(SessionManager.getInstance());
 		}
 		return instance;
+	}
+	
+	public void reconnect(String masterAddress) {
+		System.out.println("RECONNECTING..."+masterAddress);
+		disconnect();
+		jedisPool	= new JedisPool(new JedisPoolConfig(), masterAddress, 6379);
+		runSubscriber();
 	}
 
 	public void connect() {
 		
-		try {
-			jedisPool	= new JedisPool(new JedisPoolConfig(), "192.168.116.131", 6379);
+		String MASTER_NAME = "mymaster";
+		Set<String> SENTINEL_ADDRESS = new HashSet<String>();
+		SENTINEL_ADDRESS.add("192.168.5.129:26379");
+		SENTINEL_ADDRESS.add("192.168.5.130:26379");
+		SENTINEL_ADDRESS.add("192.168.5.131:26379");
+		
+		try {			
+			JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(MASTER_NAME,SENTINEL_ADDRESS );
+			Jedis jedisSentinel = jedisSentinelPool.getResource();
+		
+			Socket jedisSocket = jedisSentinel.getClient().getSocket();
+	
+			String masterAddress = jedisSocket.getRemoteSocketAddress().toString().split(":")[0].substring(1);
+			jedisSentinel.close();
+		
+			System.out.println("MASTER ADDRESS : " + masterAddress);
+			jedisPool	= new JedisPool(new JedisPoolConfig(), masterAddress, 6379);
+			
+			Runnable r = new SentinelSubscriber();
+			Thread t = new Thread(r);
+			t.start();			
+
 		} catch(Exception e) {
 			
 		}
@@ -36,8 +67,8 @@ public class RedisConnector {
 		jedisPool.destroy();
 	}
 	
-	public void getAll(SessionManager sessionManager) {
-		
+	public void getAll() {
+		SessionManager sessionManager = SessionManager.getInstance();
 		Jedis jedis = jedisPool.getResource();
 		ScanResult<String> str;
 		String cursor = "0";
@@ -56,31 +87,43 @@ public class RedisConnector {
 	}
 	
 	public void set(String str) {
-		
-		Jedis jedis = jedisPool.getResource();
-		jedis.setex(str, 11, str);
-		jedis.close();
+		try {
+			Jedis jedis = jedisPool.getResource();
+			jedis.setex(str, 11, str);
+			jedis.close();
+		} catch(JedisConnectionException e) {
+			
+		}
 	}
 	
 	public void get(String session) {
-		
-		Jedis jedis = jedisPool.getResource();
-		jedis.get(session);
-		jedis.close();
+		try {
+			Jedis jedis = jedisPool.getResource();
+			jedis.get(session);
+			jedis.close();
+		}catch (JedisConnectionException e) {
+				
+		}
 	}
 	
 	public void expire(String session) {
-		
-		Jedis jedis = jedisPool.getResource();
-		jedis.expire(session, 11);
-		jedis.close();
+		try {
+			Jedis jedis = jedisPool.getResource();
+			jedis.expire(session, 11);
+			jedis.close();
+		} catch (JedisConnectionException e) {
+							
+		}
 	}
 	
 	public void del(String session) {
-		
-		Jedis jedis = jedisPool.getResource();
-		jedis.del(session);
-		jedis.close();
+		try {
+			Jedis jedis = jedisPool.getResource();
+			jedis.del(session);
+			jedis.close();
+		} catch (JedisConnectionException e) {
+			
+		}
 	}
 	
 	public void runSubscriber() {
