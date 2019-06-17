@@ -18,8 +18,11 @@ class Parser {
 		
 		Header header = gson.fromJson(str, Header.class);
 		
+		System.out.println("RECIEVED DATA : "+ header);
+		
 		String command = header.getCommand();
 		String sessionKey = header.getSessionKey();
+		
 		
 		CommandModule commandModule = null;
 	
@@ -33,7 +36,7 @@ class Parser {
 			
 			commandModule = new EndModule();
 		}	
-		
+
 		Header result = commandModule.getResult();
 		result.setHostName(ClusteredServer.name);
 		
