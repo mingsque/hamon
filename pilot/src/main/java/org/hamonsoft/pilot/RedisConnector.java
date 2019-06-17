@@ -1,7 +1,9 @@
 package org.hamonsoft.pilot;
 
-import java.net.Socket;
+
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 
 import redis.clients.jedis.Jedis;
@@ -13,6 +15,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public class RedisConnector {
 	private JedisPool jedisPool;
+	private Queue<String> errorRecoverQueue =  new LinkedList<String>();
 	
 	static private RedisConnector instance;
 	
@@ -31,6 +34,20 @@ public class RedisConnector {
 		disconnect();
 		jedisPool	= new JedisPool(new JedisPoolConfig(), masterAddress, 6379);
 		runSubscriber();
+		
+		while(errorRecoverQueue.isEmpty()!=true) {
+			System.out.println("RECOVER COMP");
+			String[] temp = errorRecoverQueue.poll().split(":");
+			if(temp[0].equals("SETEX")) {
+				set(temp[1]);
+			} else if (temp[0].equals("GET")) {
+				get(temp[1]);
+			}else if (temp[0].equals("EXPIRE")) {
+				expire(temp[1]);		
+			}else if(temp[0].equals("DEL")) {
+				del(temp[1]);
+			}
+		}
 	}
 
 	public void connect() {
@@ -44,10 +61,9 @@ public class RedisConnector {
 		try {			
 			JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(MASTER_NAME,SENTINEL_ADDRESS );
 			Jedis jedisSentinel = jedisSentinelPool.getResource();
-		
-			Socket jedisSocket = jedisSentinel.getClient().getSocket();
-	
-			String masterAddress = jedisSocket.getRemoteSocketAddress().toString().split(":")[0].substring(1);
+
+			String masterAddress = jedisSentinelPool.getCurrentHostMaster().toString().split(":")[0];
+			
 			jedisSentinel.close();
 		
 			System.out.println("MASTER ADDRESS : " + masterAddress);
@@ -61,7 +77,12 @@ public class RedisConnector {
 			
 		}
 	}
-
+	
+	public synchronized void addQueue(String str) {
+		
+		errorRecoverQueue.add(str);
+	}
+	
 	public void disconnect() {
 		
 		jedisPool.destroy();
@@ -86,49 +107,53 @@ public class RedisConnector {
 		jedis.close();
 	}
 	
-	public void set(String str) {
+	public synchronized void set(String session) {
 		try {
 			Jedis jedis = jedisPool.getResource();
-			jedis.setex(str, 11, str);
+			jedis.setex(session, 11, session);
 			jedis.close();
 		} catch(JedisConnectionException e) {
-			
+			System.out.println("REDIS RECOVER");
+			addQueue("SETEX:"+session);
 		}
 	}
 	
-	public void get(String session) {
+	public synchronized void get(String session) {
 		try {
 			Jedis jedis = jedisPool.getResource();
 			jedis.get(session);
 			jedis.close();
 		}catch (JedisConnectionException e) {
-				
+			System.out.println("REDIS RECOVER");
+			addQueue("GET:"+session);
 		}
 	}
 	
-	public void expire(String session) {
+	public synchronized void expire(String session) {
 		try {
 			Jedis jedis = jedisPool.getResource();
 			jedis.expire(session, 11);
 			jedis.close();
 		} catch (JedisConnectionException e) {
-							
+			System.out.println("REDIS RECOVER");
+			addQueue("EXPIRE:"+session);
 		}
 	}
 	
-	public void del(String session) {
+	public synchronized void del(String session) {
 		try {
 			Jedis jedis = jedisPool.getResource();
 			jedis.del(session);
 			jedis.close();
 		} catch (JedisConnectionException e) {
-			
+			System.out.println("REDIS RECOVER");
+			addQueue("DEL:"+session);
 		}
 	}
 	
 	public void runSubscriber() {
 		
-		Runnable r = new Subscriber(jedisPool);
+		Runnable r = new RedisSubscriber(jedisPool);
 		Thread t = new Thread(r);
 		t.start();
 	}

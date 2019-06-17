@@ -8,11 +8,11 @@ import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-class Subscriber extends JedisPubSub implements Runnable{
+class RedisSubscriber extends JedisPubSub implements Runnable{
 	
 	JedisPool jedisPool;
 	
-	public Subscriber(JedisPool jedisPool){
+	public RedisSubscriber(JedisPool jedisPool){
 
 		this.jedisPool = jedisPool;
 	}
